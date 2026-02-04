@@ -1,1 +1,50 @@
+import ipywidgets as widgets
+from IPython.display import display, HTML, clear_output
 
+# 1. Create a dedicated Output widget for the gallery
+gallery_output = widgets.Output()
+
+# 2. Implement utility function to refresh the gallery
+def refresh_team_gallery():
+    with gallery_output:
+        gallery_output.clear_output(wait=True)
+        render_agent_gallery(agent_registry)
+
+# 3. Modify handle_registration to trigger refresh
+def handle_registration_enhanced(b):
+    with ui_output:
+        ui_output.clear_output()
+        if not name_w.value or not email_w.value:
+            print("Error: Name and Email are mandatory.")
+            return
+        b64 = encode_image(photo_w.value)
+        p = register_agent(name_w.value, email_w.value, wa_w.value, insta_w.value, web_w.value or None, b64)
+        
+        # Update dropdown options
+        agent_drop.options = get_agent_options()
+        
+        # Trigger Gallery Refresh
+        refresh_team_gallery()
+        
+        print(f"Success! '{p['name']}' added to directory. ID: {p['agent_id']}")
+
+# Update the button callback
+reg_btn.on_click(handle_registration_enhanced, remove=False) # remove=False is a precaution, usually on_click appends
+# Since widgets don't easily allow replacing handlers without the specific reference, 
+# we'll just re-assign the list of handlers for clarity in this environment.
+reg_btn._click_handlers.callbacks = [handle_registration_enhanced]
+
+# 4. Update the tabs widget with the new gallery tab
+# Note: We reuse existing widgets from previous cells (tabs, name_w, etc.)
+new_children = list(tabs.children) + [widgets.VBox([
+    widgets.HTML("<h3 style='margin-left: 20px;'>Agency Team Directory</h3>"),
+    gallery_output
+])]
+tabs.children = new_children
+
+# 5. Set title for the third tab
+tabs.set_title(2, 'View All Agents')
+
+# 6. Perform initial refresh and display
+refresh_team_gallery()
+print("UI Updated with 'View All Agents' tab and auto-refresh logic.")
